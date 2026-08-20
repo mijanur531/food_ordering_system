@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Restaurant &amp; Hotel Partner Sign Up — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card" style="max-width: 520px;">
+    <!-- Role Switcher Tabs -->
+    <div class="auth-tabs">
+      <a href="{% url 'accounts:customer_register_page' %}" class="auth-tab">Customer</a>
+      <a href="{% url 'accounts:client_register_page' %}" class="auth-tab active">Hotel Partner</a>
+      <a href="{% url 'accounts:delivery_register_page' %}" class="auth-tab">Delivery Hero</a>
+    </div>
+
+    <div class="text-center mb-4">
+      <span class="rounded-circle bg-warning text-white d-inline-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px; font-size: 1.3rem;"><i class="fas fa-store"></i></span>
+      <h3 class="fw-bold mt-2">Partner Restaurant Registration</h3>
+      <p class="text-muted small">List your kitchen, hotel, or food outlet to reach thousands of active diners.</p>
+    </div>
+
+    <div id="auth-error-alert" class="alert alert-danger d-none small py-2" role="alert"></div>
+
+    <form id="client-register-form">
+      {% csrf_token %}
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Login Username *</label>
+          <input type="text" name="username" class="form-control form-control-custom" placeholder="taj_delight" required />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Business Email</label>
+          <input type="email" name="email" class="form-control form-control-custom" placeholder="hotel@taj.com" />
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Password *</label>
+          <input type="password" name="password" class="form-control form-control-custom" placeholder="••••••••" required />
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Contact Phone *</label>
+          <input type="tel" name="phone" class="form-control form-control-custom" placeholder="9876543210" required />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Restaurant / Business Name *</label>
+        <input type="text" name="business_name" class="form-control form-control-custom" placeholder="e.g. Royal Punjabi Dhaba" required />
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Business Type *</label>
+          <select name="business_type" class="form-select form-select-custom">
+            <option value="restaurant">Restaurant</option>
+            <option value="hotel">Hotel</option>
+            <option value="partner">Business Partner</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Initial Mode *</label>
+          <select name="mode" class="form-select form-select-custom">
+            <option value="online">🟢 Online (Accepting Orders)</option>
+            <option value="offline">⚪ Offline (Temporarily Closed)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Physical Restaurant Address *</label>
+        <textarea name="business_address" rows="2" class="form-control form-control-custom" placeholder="Building, Sector, City, Landmark" required></textarea>
+      </div>
+
+      <button type="submit" id="client-register-btn" data-original-text="Register Partner Kitchen" class="btn btn-warning text-dark w-100 py-3 rounded-pill fw-bold mt-2 shadow-sm">
+        Register Partner Kitchen
+      </button>
+    </form>
+
+    <div class="text-center mt-4 pt-3 border-top small text-muted">
+      Already a partner? <a href="{% url 'accounts:client_login_page' %}" class="text-warning fw-bold text-decoration-none">Partner Sign In</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  FoodApp.attachAuthForm('client-register-form', '/api/auth/client/register/', 'client-register-btn', 'auth-error-alert');
+});
+</script>
+{% endblock %}

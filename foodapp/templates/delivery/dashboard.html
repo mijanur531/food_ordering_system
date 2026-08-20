@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Delivery Hero Dashboard &amp; Live Radar — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Header & Status Card -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          <span class="rounded-circle bg-success text-white p-2 d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+            <i class="fas fa-motorcycle"></i>
+          </span>
+          <h2 class="fw-bold mb-0">Delivery Hero Control Panel</h2>
+        </div>
+        <p class="text-muted small mb-0 mt-1">Partner: <strong>{{ user.username }}</strong> • Phone: {{ user.phone|default:"Registered" }}</p>
+      </div>
+
+      <!-- Live GPS Broadcaster Controls -->
+      <div class="d-flex align-items-center gap-2">
+        <button id="start-gps-btn" class="btn btn-outline-success btn-sm rounded-pill fw-bold" onclick="toggleGpsTracking()">
+          <i class="fas fa-location-arrow me-1"></i> <span id="gps-btn-label">Start GPS Broadcast</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Telemetry & Stats Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card">
+        <div class="stat-icon info"><i class="fas fa-satellite"></i></div>
+        <div>
+          <div class="stat-value fs-5 font-monospace" id="rider-gps-status">Standby</div>
+          <div class="stat-label">Live GPS Radar Status</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card">
+        <div class="stat-icon success"><i class="fas fa-box-open"></i></div>
+        <div>
+          <div class="stat-value" id="rider-assigned-count">0</div>
+          <div class="stat-label">Assigned Active Deliveries</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="stat-card">
+        <div class="stat-icon warning"><i class="fas fa-shield-halved"></i></div>
+        <div>
+          <div class="stat-value" id="rider-verification-status">Approved</div>
+          <div class="stat-label">Rider Verification Status</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active Assigned Deliveries Feed -->
+  <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0"><i class="fas fa-route text-success me-2"></i> Your Delivery Run Queue</h5>
+      <button class="btn btn-sm btn-outline-secondary rounded-pill" onclick="loadDeliveryOrders()">
+        <i class="fas fa-sync-alt me-1"></i> Refresh Queue
+      </button>
+    </div>
+
+    <div id="delivery-orders-list">
+      <div class="text-center py-4 text-muted">
+        <div class="spinner-border spinner-border-sm text-success me-2"></div>
+        Loading delivery assignments...
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let gpsWatchId = null;
+
+async function loadDeliveryOrders() {
+  const container = document.getElementById('delivery-orders-list');
+  const countBadge = document.getElementById('rider-assigned-count');
+
+  const res = await FoodApp.apiFetch('/api/orders/history/');
+  if (res.ok && res.data) {
+    const orders = res.data.results || res.data;
+    const active = orders.filter(o => o.status !== 'delivered' && o.status !== 'cancelled');
+
+    if (countBadge) countBadge.textContent = active.length;
+
+    if (active.length === 0) {
+      container.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-flag-checkered text-success fs-2 mb-2 d-block"></i>
+          <h6>No active delivery runs right now</h6>
+          <p class="small text-muted">New orders assigned to your route will pop up here in real time.</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = active.map(o => `
+      <div class="p-4 border rounded-4 mb-3 bg-light">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <span class="badge bg-success rounded-pill px-3 py-1 text-uppercase">${o.status.replace(/_/g, ' ')}</span>
+            <h5 class="fw-bold mb-0 mt-1">Order #${o.id}</h5>
+          </div>
+          <div class="text-end">
+            <div class="fw-bold fs-5">₹${parseFloat(o.total_amount).toFixed(2)}</div>
+            <span class="badge bg-light text-dark border small">${o.payment_method.toUpperCase()} (${o.payment_status})</span>
+          </div>
+        </div>
+
+        <div class="row g-3 mb-3 small">
+          <div class="col-md-6">
+            <strong><i class="fas fa-user text-primary me-1"></i> Customer:</strong> ${o.customer_username}
+            <div class="text-muted mt-1"><i class="fas fa-map-marker-alt text-danger me-1"></i> ${o.delivery_address}</div>
+          </div>
+          <div class="col-md-6">
+            <strong><i class="fas fa-bag-shopping text-warning me-1"></i> Items in bag:</strong>
+            <div class="text-muted">${(o.items || []).map(i => `${i.quantity}x ${i.food_item_name}`).join(', ')}</div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+          <button class="btn btn-sm btn-info text-dark rounded-pill" onclick="advanceOrderStatus(${o.id}, 'out_for_delivery')">
+            <i class="fas fa-motorcycle me-1"></i> Picked Up / On The Way
+          </button>
+          <button class="btn btn-sm btn-success rounded-pill" onclick="advanceOrderStatus(${o.id}, 'delivered')">
+            <i class="fas fa-check-double me-1"></i> Mark Delivered &amp; Collect
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+async function advanceOrderStatus(orderId, newStatus) {
+  const res = await FoodApp.apiFetch(`/api/orders/history/${orderId}/update-status/`, {
+    method: 'POST',
+    body: JSON.stringify({ status: newStatus }),
+  });
+  if (res.ok) {
+    FoodApp.showToast(`Order #${orderId} marked as ${newStatus}`, 'success');
+    loadDeliveryOrders();
+  } else {
+    FoodApp.showToast(res.data.message || 'Status update failed', 'error');
+  }
+}
+
+function toggleGpsTracking() {
+  const statusEl = document.getElementById('rider-gps-status');
+  const btnLabel = document.getElementById('gps-btn-label');
+  const btn = document.getElementById('start-gps-btn');
+
+  if (gpsWatchId !== null) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+    statusEl.textContent = 'Standby (Offline)';
+    statusEl.className = 'stat-value fs-5 font-monospace text-muted';
+    btnLabel.textContent = 'Start GPS Broadcast';
+    btn.className = 'btn btn-outline-success btn-sm rounded-pill fw-bold';
+    FoodApp.showToast('GPS broadcaster paused.', 'info');
+  } else {
+    if (!navigator.geolocation) {
+      FoodApp.showToast('Geolocation is not supported by your browser.', 'error');
+      return;
+    }
+
+    statusEl.textContent = 'Broadcasting...';
+    statusEl.className = 'stat-value fs-5 font-monospace text-success fa-beat';
+    btnLabel.textContent = 'Stop GPS Broadcast';
+    btn.className = 'btn btn-danger btn-sm rounded-pill fw-bold';
+
+    gpsWatchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        statusEl.textContent = `📍 ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        statusEl.className = 'stat-value fs-5 font-monospace text-success';
+
+        // Push live coordinate to backend
+        await FoodApp.apiFetch('/api/delivery/location/', {
+          method: 'POST',
+          body: JSON.stringify({ latitude: lat, longitude: lng }),
+        });
+      },
+      (err) => {
+        statusEl.textContent = 'GPS Error';
+        statusEl.className = 'stat-value fs-5 font-monospace text-danger';
+        FoodApp.showToast(err.message, 'warning');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+    );
+    FoodApp.showToast('Live GPS Broadcast Active! Location updating to server.', 'success');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  loadDeliveryOrders();
+  setInterval(loadDeliveryOrders, 8000);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}FoodVibe — Real-Time Food Delivery & Dining Platform{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section with 3D Three.js Visualizer -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3 py-2 fw-semibold mb-3">
+          <i class="fas fa-bolt me-1"></i> Instant 30-Minute Food Delivery
+        </span>
+        <h1 class="hero-title">
+          Cravings Delivered <br />
+          <span class="text-gradient">Hot &amp; Fresh</span> To Your Door
+        </h1>
+        <p class="hero-subtitle">
+          Explore delicious cuisines from top-rated restaurants, local dhabas, and luxury hotels. From pure North Indian Paneer curries to international artisan pizzas.
+        </p>
+
+        <!-- Quick Search Form -->
+        <form action="{% url 'menu:menu_page' %}" method="GET" class="card border-0 shadow-lg rounded-4 p-2 mb-4 bg-white">
+          <div class="d-flex align-items-center gap-2">
+            <div class="input-group input-group-lg border-0">
+              <span class="input-group-text bg-transparent border-0 text-muted ps-3">
+                <i class="fas fa-search"></i>
+              </span>
+              <input type="text" name="search" class="form-control border-0 shadow-none fs-6" placeholder="Search dishes (e.g. Matar Paneer, Biryani, Pizza)..." />
+            </div>
+            <button type="submit" class="btn btn-primary-custom px-4 py-3 rounded-4 fw-bold">
+              Explore
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick Category Shortcuts -->
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <span class="small fw-bold text-muted me-1">Popular:</span>
+          <a href="{% url 'menu:menu_page' %}?category=veg" class="badge bg-light text-dark border text-decoration-none py-2 px-3 rounded-pill shadow-sm hover-elevate">
+            <span class="diet-icon veg me-1"></span> Pure Veg
+          </a>
+          <a href="{% url 'menu:menu_page' %}?category=non_veg" class="badge bg-light text-dark border text-decoration-none py-2 px-3 rounded-pill shadow-sm hover-elevate">
+            <span class="diet-icon nonveg me-1"></span> Non-Veg
+          </a>
+          <a href="{% url 'menu:menu_page' %}?category=international" class="badge bg-light text-dark border text-decoration-none py-2 px-3 rounded-pill shadow-sm hover-elevate">
+            <i class="fas fa-globe text-info me-1"></i> International
+          </a>
+          <a href="{% url 'menu:menu_page' %}?search=paneer" class="badge bg-light text-dark border text-decoration-none py-2 px-3 rounded-pill shadow-sm hover-elevate">
+            <i class="fas fa-fire text-warning me-1"></i> Paneer Specials
+          </a>
+        </div>
+      </div>
+
+      <!-- 3D Three.js Interactive Container -->
+      <div class="col-lg-6">
+        <div class="position-relative">
+          <div id="threejs-hero-container"></div>
+          <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2 text-center">
+            <span class="badge bg-white text-dark shadow-sm rounded-pill px-3 py-1 small border">
+              <i class="fas fa-hand-pointer text-primary me-1"></i> Interactive 3D • Drag / Hover to rotate
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 Main Food Categories Grid -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="text-primary fw-bold small text-uppercase letter-spacing-1">Taste The Variety</span>
+      <h2 class="fw-extrabold fs-1 mt-1">Our Core Menu Categories</h2>
+      <p class="text-muted mx-auto" style="max-width: 600px;">
+        Tailored for every dietary preference, from wholesome Indian regional recipes to global street foods.
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <!-- 1. Pure Vegetarian -->
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center hover-elevate" style="background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);">
+          <div class="rounded-circle bg-success text-white mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem;">
+            <i class="fas fa-leaf"></i>
+          </div>
+          <span class="badge badge-veg rounded-pill py-1 px-3 mb-2 mx-auto">100% Pure Veg</span>
+          <h4 class="fw-bold mb-2">Vegetarian</h4>
+          <p class="text-muted small mb-3">
+            Freshly prepared curries, thalis, dals, dosas, and crispy starters crafted with pure ingredients.
+          </p>
+          <a href="{% url 'menu:menu_page' %}?category=veg" class="btn btn-outline-success btn-sm rounded-pill mt-auto fw-semibold">
+            Browse Veg Menu <i class="fas fa-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- 2. Non-Vegetarian -->
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center hover-elevate" style="background: linear-gradient(180deg, #fef2f2 0%, #ffffff 100%);">
+          <div class="rounded-circle bg-danger text-white mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem;">
+            <i class="fas fa-drumstick-bite"></i>
+          </div>
+          <span class="badge badge-nonveg rounded-pill py-1 px-3 mb-2 mx-auto">Savory Feasts</span>
+          <h4 class="fw-bold mb-2">Non-Vegetarian</h4>
+          <p class="text-muted small mb-3">
+            Authentic Butter Chicken, Hyderabadi Biryani, Kashmiri Rogan Josh, and Coastal Seafood.
+          </p>
+          <a href="{% url 'menu:menu_page' %}?category=non_veg" class="btn btn-outline-danger btn-sm rounded-pill mt-auto fw-semibold">
+            Browse Non-Veg <i class="fas fa-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- 3. International -->
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center hover-elevate" style="background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);">
+          <div class="rounded-circle bg-primary text-white mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem;">
+            <i class="fas fa-pizza-slice"></i>
+          </div>
+          <span class="badge badge-intl rounded-pill py-1 px-3 mb-2 mx-auto">Global Flavors</span>
+          <h4 class="fw-bold mb-2">International</h4>
+          <p class="text-muted small mb-3">
+            Wood-fired Italian Pizzas, Alfredo Pasta, Japanese Sushi, Mexican Tacos, and Continental grills.
+          </p>
+          <a href="{% url 'menu:menu_page' %}?category=international" class="btn btn-outline-primary btn-sm rounded-pill mt-auto fw-semibold">
+            Browse International <i class="fas fa-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- 4. Regional Indian & Paneer Varieties -->
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm rounded-4 p-4 text-center hover-elevate" style="background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);">
+          <div class="rounded-circle bg-warning text-white mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem;">
+            <i class="fas fa-crown"></i>
+          </div>
+          <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill py-1 px-3 mb-2 mx-auto">Regional Favorites</span>
+          <h4 class="fw-bold mb-2">Paneer &amp; Regional</h4>
+          <p class="text-muted small mb-3">
+            Matar Paneer, Aloo Paneer, Chilli Paneer, Palak Paneer, Shahi Paneer, and Punjabi specialties.
+          </p>
+          <a href="{% url 'menu:menu_page' %}?search=paneer" class="btn btn-outline-warning btn-sm rounded-pill mt-auto fw-semibold text-dark">
+            Explore Paneer Dishes <i class="fas fa-arrow-right ms-1"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Dishes Live Section -->
+<section class="py-5 bg-white">
+  <div class="container">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4">
+      <div>
+        <span class="text-primary fw-bold small text-uppercase">Trending Today</span>
+        <h2 class="fw-bold mt-1 mb-0">Featured &amp; Recommended Dishes</h2>
+      </div>
+      <a href="{% url 'menu:menu_page' %}" class="btn btn-outline-custom rounded-pill mt-3 mt-md-0">
+        View Full Menu <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+
+    <!-- Dishes Container (Async populated from API or fallback) -->
+    <div class="row g-4" id="home-featured-items">
+      <div class="col-12 text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading dishes...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="text-center mb-5">
+      <span class="text-primary fw-bold small text-uppercase">Simple 3-Step Process</span>
+      <h2 class="fw-bold mt-1">How FoodVibe Works</h2>
+    </div>
+
+    <div class="row g-4 text-center">
+      <div class="col-md-4">
+        <div class="card border-0 bg-transparent p-3">
+          <div class="rounded-4 bg-white shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-map-marker-alt text-primary fs-2"></i>
+          </div>
+          <h5 class="fw-bold">1. Set Delivery Location</h5>
+          <p class="text-muted small">
+            Use our 1-click GPS auto-detect or enter your address to find top kitchens nearby.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card border-0 bg-transparent p-3">
+          <div class="rounded-4 bg-white shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-utensils text-warning fs-2"></i>
+          </div>
+          <h5 class="fw-bold">2. Select Your Favorites</h5>
+          <p class="text-muted small">
+            Browse pure veg curries, tandoori items, paneer dishes, or global pizzas with live pricing.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card border-0 bg-transparent p-3">
+          <div class="rounded-4 bg-white shadow-sm d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+            <i class="fas fa-motorcycle text-success fs-2"></i>
+          </div>
+          <h5 class="fw-bold">3. Live Track &amp; Enjoy</h5>
+          <p class="text-muted small">
+            Watch our delivery hero bring your steaming meal with real-time GPS radar tracking.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Partner With Us Banner -->
+<section class="py-5">
+  <div class="container">
+    <div class="card border-0 rounded-4 overflow-hidden shadow-lg" style="background: var(--dark); color: white;">
+      <div class="row align-items-center g-0">
+        <div class="col-lg-7 p-4 p-md-5">
+          <span class="badge bg-primary text-white rounded-pill px-3 py-2 mb-3">Startup Ecosystem</span>
+          <h2 class="text-white fw-bold display-6 mb-3">Grow Your Food Business With FoodVibe</h2>
+          <p class="text-secondary mb-4">
+            Whether you own a hotel, restaurant, cloud kitchen, or want to deliver meals as a rider partner, our cutting-edge portal gives you real-time orders, analytics, and instant payouts.
+          </p>
+          <div class="d-flex flex-wrap gap-3">
+            <a href="{% url 'accounts:client_register_page' %}" class="btn btn-primary-custom rounded-pill">
+              <i class="fas fa-hotel me-1"></i> Register Restaurant
+            </a>
+            <a href="{% url 'accounts:delivery_register_page' %}" class="btn btn-outline-light rounded-pill">
+              <i class="fas fa-motorcycle me-1"></i> Join as Delivery Rider
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-5 p-4 text-center d-none d-lg-block">
+          <div class="p-4 bg-dark-subtle rounded-4 text-start border border-secondary shadow-sm">
+            <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="rounded-circle bg-success text-white p-3"><i class="fas fa-chart-line fs-4"></i></div>
+              <div>
+                <h5 class="text-white fw-bold mb-0">Live Hotel &amp; Rider Ops</h5>
+                <small class="text-muted">Multi-role synced platform</small>
+              </div>
+            </div>
+            <div class="d-flex justify-content-between border-top border-secondary pt-2 small text-muted">
+              <span>Client Mode: Online/Offline</span>
+              <span class="text-success fw-bold">Live GPS Broadcaster</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Three.js 3D Hero Script -->
+<script src="{% static 'js/three_hero.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+  // Load featured dishes async
+  const container = document.getElementById('home-featured-items');
+  if (!container) return;
+
+  const res = await FoodApp.apiFetch('/api/menu/items/?limit=8');
+  if (res.ok && res.data) {
+    const items = res.data.results || res.data;
+    if (items.length === 0) {
+      container.innerHTML = `
+        <div class="col-12 text-center py-4 text-muted">
+          <i class="fas fa-utensils fa-2x mb-2"></i>
+          <p>No dishes available right now. Check back shortly!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = items.slice(0, 8).map(item => {
+      let badgeHtml = '';
+      if (item.category_name === 'veg') {
+        badgeHtml = '<span class="badge badge-veg rounded-pill"><span class="diet-icon veg me-1"></span> Veg</span>';
+      } else if (item.category_name === 'non_veg') {
+        badgeHtml = '<span class="badge badge-nonveg rounded-pill"><span class="diet-icon nonveg me-1"></span> Non-Veg</span>';
+      } else {
+        badgeHtml = '<span class="badge badge-intl rounded-pill"><i class="fas fa-globe me-1"></i> Intl</span>';
+      }
+
+      const imgUrl = item.image || `https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80`;
+
+      return `
+        <div class="col-md-6 col-lg-3">
+          <div class="food-card">
+            <div class="food-card-img-wrapper">
+              <img src="${imgUrl}" alt="${item.name}" class="food-card-img" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'" />
+              <div class="food-card-badge">${badgeHtml}</div>
+              <button class="food-wishlist-btn" onclick="FoodApp.toggleWishlist(${item.id}, this)" title="Add to wishlist">
+                <i class="fas fa-heart"></i>
+              </button>
+            </div>
+            <div class="food-card-body">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="badge bg-light text-muted border small">${item.subcategory_name || 'Chef Special'}</span>
+                <span class="badge ${item.mode === 'online' ? 'badge-online' : 'badge-offline'} rounded-pill small">${item.mode}</span>
+              </div>
+              <h5 class="food-title">${item.name}</h5>
+              <p class="food-desc">${item.description || 'Prepared with fresh ingredients and authentic aromatic spices.'}</p>
+              <div class="food-card-footer">
+                <div class="food-price">₹${parseFloat(item.price).toFixed(2)}</div>
+                <button class="btn btn-primary-custom btn-sm rounded-pill" onclick="FoodApp.addToCart(${item.id}, 1, this)">
+                  <i class="fas fa-plus me-1"></i> Add
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    container.innerHTML = '<div class="col-12 text-center text-muted">Failed to load menu items.</div>';
+  }
+});
+</script>
+{% endblock %}

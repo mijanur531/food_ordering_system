@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Customer Sign Up — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <!-- Role Switcher Tabs -->
+    <div class="auth-tabs">
+      <a href="{% url 'accounts:customer_register_page' %}" class="auth-tab active">Customer</a>
+      <a href="{% url 'accounts:client_register_page' %}" class="auth-tab">Hotel Partner</a>
+      <a href="{% url 'accounts:delivery_register_page' %}" class="auth-tab">Delivery Hero</a>
+    </div>
+
+    <div class="text-center mb-4">
+      <span class="brand-icon mb-2" style="width: 44px; height: 44px; font-size: 1.2rem;"><i class="fas fa-utensils"></i></span>
+      <h3 class="fw-bold mt-2">Create Customer Account</h3>
+      <p class="text-muted small">Join FoodVibe to order fresh meals with lightning-fast delivery.</p>
+    </div>
+
+    <div id="auth-error-alert" class="alert alert-danger d-none small py-2" role="alert"></div>
+
+    <form id="customer-register-form">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Username *</label>
+        <input type="text" name="username" class="form-control form-control-custom" placeholder="choose_username" required />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Email Address</label>
+        <input type="email" name="email" class="form-control form-control-custom" placeholder="you@example.com" />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Password *</label>
+        <input type="password" name="password" class="form-control form-control-custom" placeholder="••••••••" required />
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col-7">
+          <label class="form-label small fw-bold">Phone Number</label>
+          <input type="tel" name="phone" class="form-control form-control-custom" placeholder="9876543210" />
+        </div>
+        <div class="col-5">
+          <label class="form-label small fw-bold">Age (Years)</label>
+          <input type="number" name="age" min="10" max="110" class="form-control form-control-custom" placeholder="21" />
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label small fw-bold mb-0">Delivery Address</label>
+          <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-autodetect-location">
+            <i class="fas fa-location-crosshairs text-primary"></i> Detect
+          </button>
+        </div>
+        <textarea name="address" id="delivery_address" rows="2" class="form-control form-control-custom" placeholder="Your default delivery address"></textarea>
+      </div>
+
+      <button type="submit" id="register-btn" data-original-text="Create Account" class="btn btn-primary-custom w-100 py-3 rounded-pill fw-bold mt-2">
+        Create Account
+      </button>
+    </form>
+
+    <div class="text-center mt-4 pt-3 border-top small text-muted">
+      Already registered? <a href="{% url 'accounts:customer_login_page' %}" class="text-primary fw-bold text-decoration-none">Sign In Here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  FoodApp.attachAuthForm('customer-register-form', '/api/auth/customer/register/', 'register-btn', 'auth-error-alert');
+});
+</script>
+{% endblock %}

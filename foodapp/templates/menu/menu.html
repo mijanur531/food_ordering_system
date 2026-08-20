@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Explore Food Menu — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Header Banner -->
+  <div class="card border-0 rounded-4 shadow-sm p-4 mb-4" style="background: linear-gradient(135deg, #fff7f5 0%, #fff 100%); border-left: 5px solid var(--primary) !important;">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h2 class="fw-bold mb-1">Our Complete Food Catalog</h2>
+        <p class="text-muted mb-0 small">
+          Discover hand-crafted meals across 4 major food divisions: Pure Veg, Non-Veg, International, and Indian Regional Paneer &amp; Curry classics.
+        </p>
+      </div>
+      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-white text-dark border shadow-sm rounded-pill py-2 px-3">
+          <i class="fas fa-motorcycle text-success me-1"></i> Live Ordering Active
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white">
+    <div class="row g-3 align-items-center">
+      <!-- Search Input -->
+      <div class="col-lg-5 col-md-6">
+        <div class="input-group">
+          <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" id="menu-search-input" class="form-control bg-light border-0" placeholder="Search dishes (Paneer, Biryani, Pizza, Burger)..." value="{{ request.GET.search|default:'' }}" />
+        </div>
+      </div>
+
+      <!-- Mode filter (Online / Offline / All) -->
+      <div class="col-lg-3 col-md-3 col-6">
+        <select id="mode-filter-select" class="form-select bg-light border-0">
+          <option value="">Mode: All (Online + Offline)</option>
+          <option value="online" {% if request.GET.mode == 'online' %}selected{% endif %}>🟢 Online Mode Only</option>
+          <option value="offline" {% if request.GET.mode == 'offline' %}selected{% endif %}>⚪ Offline Mode Only</option>
+        </select>
+      </div>
+
+      <!-- Price Sort -->
+      <div class="col-lg-4 col-md-3 col-6">
+        <select id="price-sort-select" class="form-select bg-light border-0">
+          <option value="">Sort By: Default</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="name_asc">Name: A to Z</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Category Chips (Veg, Non-Veg, International, Regional Specialties) -->
+    <div class="d-flex flex-wrap gap-2 mt-3 pt-3 border-top">
+      <button class="filter-chip category-chip {% if not request.GET.category and not request.GET.search %}active{% endif %}" data-category="">
+        <i class="fas fa-utensils"></i> All Cuisines
+      </button>
+      <button class="filter-chip category-chip {% if request.GET.category == 'veg' %}active{% endif %}" data-category="veg">
+        <span class="diet-icon veg"></span> Pure Vegetarian
+      </button>
+      <button class="filter-chip category-chip {% if request.GET.category == 'non_veg' %}active{% endif %}" data-category="non_veg">
+        <span class="diet-icon nonveg"></span> Non-Vegetarian
+      </button>
+      <button class="filter-chip category-chip {% if request.GET.category == 'international' %}active{% endif %}" data-category="international">
+        <i class="fas fa-globe text-info"></i> International
+      </button>
+      <button class="filter-chip category-chip {% if request.GET.search == 'paneer' %}active{% endif %}" data-search="paneer">
+        <i class="fas fa-fire text-warning"></i> Indian Paneer Specials
+      </button>
+    </div>
+
+    <!-- Regional & Subcategory Pills Container (Loaded dynamically) -->
+    <div id="subcategory-pills-bar" class="d-flex flex-wrap gap-2 mt-2 pt-2">
+      <!-- Subcategory tags injected via JS -->
+    </div>
+  </div>
+
+  <!-- Food Items Grid -->
+  <div class="row g-4" id="menu-items-container">
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading food menu...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div id="empty-menu-state" class="text-center py-5 d-none">
+    <div class="rounded-circle bg-light d-inline-flex p-4 mb-3 text-muted">
+      <i class="fas fa-search fs-1"></i>
+    </div>
+    <h4 class="fw-bold">No dishes found</h4>
+    <p class="text-muted">Try tweaking your search keywords or switching category filters.</p>
+    <button class="btn btn-outline-custom rounded-pill mt-2" onclick="resetAllFilters()">Reset All Filters</button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentCategory = '{{ request.GET.category|default:"" }}';
+let currentSearch = '{{ request.GET.search|default:"" }}';
+let currentSubcategory = '';
+let currentMode = '{{ request.GET.mode|default:"" }}';
+let currentSort = '';
+let allLoadedItems = [];
+
+async function fetchSubcategories() {
+  const pillsContainer = document.getElementById('subcategory-pills-bar');
+  if (!pillsContainer) return;
+
+  const res = await FoodApp.apiFetch('/api/menu/subcategories/');
+  if (res.ok && res.data) {
+    const subs = res.data.results || res.data;
+    if (subs.length > 0) {
+      pillsContainer.innerHTML = `
+        <span class="small fw-bold text-muted align-self-center me-1">Sub-choices:</span>
+        <span class="sub-filter-pill active" data-subid="">All Varieties</span>
+        ${subs.slice(0, 14).map(s => `
+          <span class="sub-filter-pill" data-subid="${s.id}" data-cat="${s.category_name}">${s.name} (${s.region || 'India'})</span>
+        `).join('')}
+      `;
+
+      pillsContainer.querySelectorAll('.sub-filter-pill').forEach(pill => {
+        pill.addEventListener('click', function () {
+          pillsContainer.querySelectorAll('.sub-filter-pill').forEach(p => p.classList.remove('active'));
+          this.classList.add('active');
+          currentSubcategory = this.dataset.subid;
+          renderFilteredMenu();
+        });
+      });
+    }
+  }
+}
+
+async function loadMenuItems() {
+  const container = document.getElementById('menu-items-container');
+  container.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+  let url = '/api/menu/items/?limit=100';
+  const res = await FoodApp.apiFetch(url);
+
+  if (res.ok && res.data) {
+    allLoadedItems = res.data.results || res.data;
+    renderFilteredMenu();
+  } else {
+    container.innerHTML = '<div class="col-12 text-center text-danger py-4">Failed to load dishes.</div>';
+  }
+}
+
+function renderFilteredMenu() {
+  const container = document.getElementById('menu-items-container');
+  const emptyState = document.getElementById('empty-menu-state');
+
+  let filtered = [...allLoadedItems];
+
+  // Category filter
+  if (currentCategory) {
+    filtered = filtered.filter(item => item.category_name === currentCategory);
+  }
+
+  // Subcategory filter
+  if (currentSubcategory) {
+    filtered = filtered.filter(item => String(item.subcategory) === String(currentSubcategory));
+  }
+
+  // Mode filter (online / offline)
+  if (currentMode) {
+    filtered = filtered.filter(item => item.mode === currentMode);
+  }
+
+  // Keyword search
+  if (currentSearch) {
+    const q = currentSearch.toLowerCase().trim();
+    filtered = filtered.filter(item =>
+      (item.name && item.name.toLowerCase().includes(q)) ||
+      (item.description && item.description.toLowerCase().includes(q)) ||
+      (item.subcategory_name && item.subcategory_name.toLowerCase().includes(q))
+    );
+  }
+
+  // Sorting
+  if (currentSort === 'price_asc') {
+    filtered.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+  } else if (currentSort === 'price_desc') {
+    filtered.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+  } else if (currentSort === 'name_asc') {
+    filtered.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '';
+    emptyState.classList.remove('d-none');
+    return;
+  }
+
+  emptyState.classList.add('d-none');
+  container.innerHTML = filtered.map(item => {
+    let dietBadge = '';
+    if (item.category_name === 'veg') {
+      dietBadge = '<span class="badge badge-veg rounded-pill"><span class="diet-icon veg me-1"></span> Veg</span>';
+    } else if (item.category_name === 'non_veg') {
+      dietBadge = '<span class="badge badge-nonveg rounded-pill"><span class="diet-icon nonveg me-1"></span> Non-Veg</span>';
+    } else {
+      dietBadge = '<span class="badge badge-intl rounded-pill"><i class="fas fa-globe me-1"></i> International</span>';
+    }
+
+    const ageBadge = item.age_restricted
+      ? '<span class="badge bg-danger text-white rounded-pill ms-1" title="Requires Age Verification"><i class="fas fa-shield-alt"></i> 18+</span>'
+      : '';
+
+    const imgUrl = item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+
+    return `
+      <div class="col-lg-3 col-md-6 col-sm-12">
+        <div class="food-card">
+          <div class="food-card-img-wrapper">
+            <img src="${imgUrl}" alt="${item.name}" class="food-card-img" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'" />
+            <div class="food-card-badge">${dietBadge} ${ageBadge}</div>
+            <button class="food-wishlist-btn" onclick="FoodApp.toggleWishlist(${item.id}, this)" title="Wishlist">
+              <i class="fas fa-heart"></i>
+            </button>
+          </div>
+          <div class="food-card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="badge bg-light text-muted border small">${item.subcategory_name || 'Chef Special'}</span>
+              <span class="badge ${item.mode === 'online' ? 'badge-online' : 'badge-offline'} rounded-pill small">${item.mode}</span>
+            </div>
+            <h5 class="food-title">${item.name}</h5>
+            <p class="food-desc">${item.description || 'Prepared fresh upon order with aromatic herbs & spices.'}</p>
+            <div class="food-card-footer">
+              <div class="food-price">₹${parseFloat(item.price).toFixed(2)}</div>
+              <button class="btn btn-primary-custom btn-sm rounded-pill" onclick="FoodApp.addToCart(${item.id}, 1, this)">
+                <i class="fas fa-plus me-1"></i> Add to Cart
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function resetAllFilters() {
+  currentCategory = '';
+  currentSearch = '';
+  currentSubcategory = '';
+  currentMode = '';
+  currentSort = '';
+  document.getElementById('menu-search-input').value = '';
+  document.getElementById('mode-filter-select').value = '';
+  document.getElementById('price-sort-select').value = '';
+  document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('.category-chip[data-category=""]')?.classList.add('active');
+  document.querySelectorAll('.sub-filter-pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('.sub-filter-pill[data-subid=""]')?.classList.add('active');
+  renderFilteredMenu();
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  fetchSubcategories();
+  loadMenuItems();
+
+  // Search input event
+  let searchDebounce;
+  document.getElementById('menu-search-input').addEventListener('input', function (e) {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      currentSearch = e.target.value;
+      renderFilteredMenu();
+    }, 250);
+  });
+
+  // Mode select event
+  document.getElementById('mode-filter-select').addEventListener('change', function (e) {
+    currentMode = e.target.value;
+    renderFilteredMenu();
+  });
+
+  // Sort select event
+  document.getElementById('price-sort-select').addEventListener('change', function (e) {
+    currentSort = e.target.value;
+    renderFilteredMenu();
+  });
+
+  // Category chip clicks
+  document.querySelectorAll('.category-chip').forEach(chip => {
+    chip.addEventListener('click', function () {
+      document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      if (this.dataset.search) {
+        currentCategory = '';
+        currentSearch = this.dataset.search;
+        document.getElementById('menu-search-input').value = currentSearch;
+      } else {
+        currentCategory = this.dataset.category;
+      }
+      renderFilteredMenu();
+    });
+  });
+});
+</script>
+{% endblock %}

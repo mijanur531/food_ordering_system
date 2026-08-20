@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Live Operations &amp; Monitoring Console — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4">
+
+  <!-- Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 pb-3 border-bottom">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-danger text-white rounded-pill px-3 py-1">
+          <i class="fas fa-circle fa-beat me-1"></i> LIVE RADAR
+        </span>
+        <h2 class="fw-bold mb-0">Platform Live Monitoring Console</h2>
+      </div>
+      <p class="text-muted small mb-0 mt-1">Real-time telemetry, active delivery tracking, platform revenue, and session/cookie diagnostics.</p>
+    </div>
+    <div class="d-flex align-items-center gap-3 mt-3 mt-md-0">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="auto-refresh-toggle" checked />
+        <label class="form-check-label small fw-bold" for="auto-refresh-toggle">Auto-Poll (5s)</label>
+      </div>
+      <button class="btn btn-outline-custom btn-sm rounded-pill" onclick="fetchLiveMonitoringData()">
+        <i class="fas fa-sync-alt me-1"></i> Refresh Now
+      </button>
+      <a href="/admin/" class="btn btn-dark btn-sm rounded-pill">
+        <i class="fas fa-shield-alt me-1"></i> Django Admin
+      </a>
+    </div>
+  </div>
+
+  <!-- Key Metrics Row -->
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-icon success"><i class="fas fa-indian-rupee-sign"></i></div>
+        <div>
+          <div class="stat-value" id="metric-revenue">₹0.00</div>
+          <div class="stat-label">Total Platform Revenue</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-icon primary"><i class="fas fa-fire"></i></div>
+        <div>
+          <div class="stat-value" id="metric-active-orders">0</div>
+          <div class="stat-label">Active Orders In Flight</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-icon info"><i class="fas fa-motorcycle"></i></div>
+        <div>
+          <div class="stat-value" id="metric-delivery-boys">0</div>
+          <div class="stat-label">Active Delivery Heroes</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="stat-card">
+        <div class="stat-icon warning"><i class="fas fa-store"></i></div>
+        <div>
+          <div class="stat-value" id="metric-restaurants">0</div>
+          <div class="stat-label">Partner Kitchens Online</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Active Orders Live Stream -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0">
+            <i class="fas fa-satellite text-danger me-2"></i> Active Orders Stream
+          </h5>
+          <span class="badge bg-light text-muted border" id="active-orders-count-badge">0 orders active</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-light small">
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Delivery Rider &amp; GPS</th>
+                <th>Payment</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="live-orders-table-body">
+              <tr>
+                <td colspan="7" class="text-center py-4 text-muted">
+                  <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                  Connecting to live telemetry feed...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Diagnostics & Session/Cookie Inspector -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
+        <h5 class="fw-bold mb-3">
+          <i class="fas fa-cookie-bite text-warning me-2"></i> Session &amp; Cookie Telemetry
+        </h5>
+        <div class="p-3 bg-light rounded-3 small mb-3">
+          <div class="mb-2"><strong>Session Key:</strong> <code id="diag-session-key" class="text-primary">Loading...</code></div>
+          <div class="mb-2"><strong>IP Address:</strong> <span id="diag-ip">127.0.0.1</span></div>
+          <div class="mb-2"><strong>User Agent:</strong> <small id="diag-agent" class="text-muted d-block text-truncate">Chrome / WebKit</small></div>
+        </div>
+
+        <h6 class="fw-bold small text-muted text-uppercase mb-2">Active Client Cookies</h6>
+        <div id="diag-cookies-list" class="p-3 bg-dark text-light rounded-3 font-monospace small" style="max-height: 200px; overflow-y: auto;">
+          <em>No cookies detected yet.</em>
+        </div>
+      </div>
+
+      <!-- Quick Platform Actions -->
+      <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <h5 class="fw-bold mb-3"><i class="fas fa-sliders-h text-primary me-2"></i> Rapid Operations</h5>
+        <div class="d-grid gap-2">
+          <a href="/menu/" class="btn btn-outline-dark btn-sm rounded-pill text-start">
+            <i class="fas fa-utensils me-2"></i> Browse &amp; Test Live Menu
+          </a>
+          <a href="/accounts/client/register/" class="btn btn-outline-warning btn-sm rounded-pill text-start text-dark">
+            <i class="fas fa-store me-2"></i> Register New Partner Kitchen
+          </a>
+          <a href="/accounts/delivery/register/" class="btn btn-outline-success btn-sm rounded-pill text-start text-dark">
+            <i class="fas fa-id-card me-2"></i> Onboard Delivery Hero
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let pollInterval = null;
+
+async function fetchLiveMonitoringData() {
+  const res = await FoodApp.apiFetch('/api/core/admin/live-monitor/');
+  if (res.ok && res.data) {
+    const d = res.data;
+
+    // Metrics
+    if (d.metrics) {
+      document.getElementById('metric-revenue').textContent = `₹${d.metrics.total_revenue.toFixed(2)}`;
+      document.getElementById('metric-active-orders').textContent = d.active_count;
+      document.getElementById('metric-delivery-boys').textContent = d.metrics.online_delivery_partners;
+      document.getElementById('metric-restaurants').textContent = d.metrics.online_restaurants;
+    }
+
+    // Active count badge
+    document.getElementById('active-orders-count-badge').textContent = `${d.active_count} active`;
+
+    // Orders Table
+    const tbody = document.getElementById('live-orders-table-body');
+    if (d.active_orders && d.active_orders.length > 0) {
+      tbody.innerHTML = d.active_orders.map(o => {
+        let statusBadgeClass = 'bg-primary';
+        if (o.status === 'confirmed') statusBadgeClass = 'bg-info text-dark';
+        else if (o.status === 'preparing') statusBadgeClass = 'bg-warning text-dark';
+        else if (o.status === 'out_for_delivery') statusBadgeClass = 'bg-success';
+        else if (o.status === 'pending_age_verification') statusBadgeClass = 'bg-danger';
+
+        let gpsInfo = '<span class="text-muted small">Not assigned</span>';
+        if (o.delivery_boy_username) {
+          const loc = o.delivery_boy_location;
+          const coords = (loc && loc.latitude) ? `<br><small class="text-success font-monospace">📍 ${loc.latitude.toFixed(3)}, ${loc.longitude.toFixed(3)}</small>` : '';
+          gpsInfo = `<strong>${o.delivery_boy_username}</strong>${coords}`;
+        }
+
+        return `
+          <tr>
+            <td><strong class="text-primary">#${o.id}</strong></td>
+            <td>
+              <div class="fw-semibold">${o.customer_username}</div>
+              <small class="text-muted text-truncate d-inline-block" style="max-width: 140px;">${o.delivery_address}</small>
+            </td>
+            <td><span class="badge ${statusBadgeClass} rounded-pill">${o.status}</span></td>
+            <td class="fw-bold">₹${parseFloat(o.total_amount).toFixed(2)}</td>
+            <td>${gpsInfo}</td>
+            <td><span class="badge bg-light text-dark border">${o.payment_method.toUpperCase()} (${o.payment_status})</span></td>
+            <td>
+              <div class="dropdown">
+                <button class="btn btn-sm btn-light border rounded-pill dropdown-toggle" data-bs-toggle="dropdown">Status</button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                  <li><a class="dropdown-item" href="#" onclick="advanceOrderStatus(${o.id}, 'confirmed')">Mark Confirmed</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="advanceOrderStatus(${o.id}, 'preparing')">Mark Preparing</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="advanceOrderStatus(${o.id}, 'out_for_delivery')">Out for Delivery</a></li>
+                  <li><a class="dropdown-item" href="#" onclick="advanceOrderStatus(${o.id}, 'delivered')">Mark Delivered</a></li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted"><i class="fas fa-check-circle text-success me-2"></i> All orders processed! No active pending deliveries.</td></tr>';
+    }
+
+    // Diagnostics & Cookies
+    if (d.diagnostics) {
+      document.getElementById('diag-session-key').textContent = d.diagnostics.session_key;
+      document.getElementById('diag-ip').textContent = d.diagnostics.ip_address;
+      document.getElementById('diag-agent').textContent = d.diagnostics.user_agent;
+
+      const cookieList = document.getElementById('diag-cookies-list');
+      if (d.diagnostics.cookies && Object.keys(d.diagnostics.cookies).length > 0) {
+        cookieList.innerHTML = Object.entries(d.diagnostics.cookies).map(([k, v]) => `
+          <div><span class="text-warning">${k}</span>: <span class="text-info">${v}</span></div>
+        `).join('');
+      } else {
+        cookieList.innerHTML = '<em>No custom cookies sent.</em>';
+      }
+    }
+  }
+}
+
+async function advanceOrderStatus(orderId, newStatus) {
+  const res = await FoodApp.apiFetch(`/api/orders/history/${orderId}/update-status/`, {
+    method: 'POST',
+    body: JSON.stringify({ status: newStatus }),
+  });
+  if (res.ok) {
+    FoodApp.showToast(`Order #${orderId} marked as ${newStatus}`, 'success');
+    fetchLiveMonitoringData();
+  } else {
+    FoodApp.showToast(res.data.message || 'Status update failed', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  fetchLiveMonitoringData();
+
+  const autoToggle = document.getElementById('auto-refresh-toggle');
+  if (autoToggle) {
+    pollInterval = setInterval(fetchLiveMonitoringData, 5000);
+    autoToggle.addEventListener('change', function () {
+      if (this.checked) {
+        pollInterval = setInterval(fetchLiveMonitoringData, 5000);
+      } else {
+        clearInterval(pollInterval);
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

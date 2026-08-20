@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Restaurant Partner Login — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <!-- Role Switcher Tabs -->
+    <div class="auth-tabs">
+      <a href="{% url 'accounts:customer_login_page' %}" class="auth-tab">Customer</a>
+      <a href="{% url 'accounts:client_login_page' %}" class="auth-tab active">Hotel Partner</a>
+      <a href="{% url 'accounts:delivery_login_page' %}" class="auth-tab">Delivery Hero</a>
+    </div>
+
+    <div class="text-center mb-4">
+      <span class="rounded-circle bg-warning text-white d-inline-flex align-items-center justify-content-center mb-2" style="width: 48px; height: 48px; font-size: 1.3rem;"><i class="fas fa-store"></i></span>
+      <h3 class="fw-bold mt-2">Restaurant Portal Login</h3>
+      <p class="text-muted small">Access your kitchen dashboard, live incoming orders, and menu manager.</p>
+    </div>
+
+    <div id="auth-error-alert" class="alert alert-danger d-none small py-2" role="alert"></div>
+
+    <form id="client-login-form">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Username *</label>
+        <input type="text" name="username" class="form-control form-control-custom" placeholder="Restaurant account username" required />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-bold">Password *</label>
+        <input type="password" name="password" class="form-control form-control-custom" placeholder="••••••••" required />
+      </div>
+
+      <button type="submit" id="client-login-btn" data-original-text="Sign In to Restaurant Portal" class="btn btn-warning text-dark w-100 py-3 rounded-pill fw-bold mt-2 shadow-sm">
+        Sign In to Restaurant Portal
+      </button>
+    </form>
+
+    <div class="text-center mt-4 pt-3 border-top small text-muted">
+      Want to partner with us? <a href="{% url 'accounts:client_register_page' %}" class="text-warning fw-bold text-decoration-none">Register Your Kitchen</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  FoodApp.attachAuthForm('client-login-form', '/api/auth/client/login/', 'client-login-btn', 'auth-error-alert');
+});
+</script>
+{% endblock %}

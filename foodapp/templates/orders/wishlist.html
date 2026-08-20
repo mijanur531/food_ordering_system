@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Saved Wishlist — FoodVibe{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Header -->
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h2 class="fw-bold mb-1"><i class="fas fa-heart text-danger me-2"></i> My Wishlist</h2>
+      <p class="text-muted small mb-0">Your saved dishes and comfort cravings for quick 1-click reordering.</p>
+    </div>
+    <a href="{% url 'menu:menu_page' %}" class="btn btn-outline-custom btn-sm rounded-pill">
+      Explore More Dishes
+    </a>
+  </div>
+
+  <!-- Loading State -->
+  <div id="wishlist-loading" class="text-center py-5">
+    <div class="spinner-border text-danger" role="status">
+      <span class="visually-hidden">Loading wishlist...</span>
+    </div>
+  </div>
+
+  <!-- Empty Wishlist -->
+  <div id="wishlist-empty" class="text-center py-5 bg-white rounded-4 shadow-sm p-5 d-none">
+    <div class="rounded-circle bg-danger-subtle d-inline-flex p-4 mb-3 text-danger">
+      <i class="far fa-heart fs-1"></i>
+    </div>
+    <h3 class="fw-bold mb-2">Your wishlist is empty</h3>
+    <p class="text-muted mb-4">Click the heart icon on any dish card in the menu to save it here for later.</p>
+    <a href="{% url 'menu:menu_page' %}" class="btn btn-primary-custom px-4 py-2 rounded-pill fw-bold">
+      Browse Food Menu
+    </a>
+  </div>
+
+  <!-- Wishlist Items Grid -->
+  <div id="wishlist-items-grid" class="row g-4 d-none">
+    <!-- Injected via JS -->
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function loadWishlist() {
+  const loading = document.getElementById('wishlist-loading');
+  const empty = document.getElementById('wishlist-empty');
+  const grid = document.getElementById('wishlist-items-grid');
+
+  loading.classList.remove('d-none');
+  empty.classList.add('d-none');
+  grid.classList.add('d-none');
+
+  const res = await FoodApp.apiFetch('/api/orders/wishlist/');
+  loading.classList.add('d-none');
+
+  if (res.ok && res.data) {
+    const items = res.data.results || res.data;
+    if (items.length === 0) {
+      empty.classList.remove('d-none');
+      return;
+    }
+
+    grid.classList.remove('d-none');
+    grid.innerHTML = items.map(w => {
+      const item = w.food_item;
+      const imgUrl = item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80';
+
+      let dietBadge = '<span class="badge badge-veg rounded-pill"><span class="diet-icon veg me-1"></span> Veg</span>';
+      if (item.category_name === 'non_veg') dietBadge = '<span class="badge badge-nonveg rounded-pill"><span class="diet-icon nonveg me-1"></span> Non-Veg</span>';
+      else if (item.category_name === 'international') dietBadge = '<span class="badge badge-intl rounded-pill"><i class="fas fa-globe me-1"></i> Intl</span>';
+
+      return `
+        <div class="col-lg-3 col-md-6 col-sm-12" id="wishlist-card-${w.id}">
+          <div class="food-card">
+            <div class="food-card-img-wrapper">
+              <img src="${imgUrl}" alt="${item.name}" class="food-card-img" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=600&q=80'" />
+              <div class="food-card-badge">${dietBadge}</div>
+              <button class="food-wishlist-btn active" onclick="removeWishlistItem(${w.id})" title="Remove from wishlist">
+                <i class="fas fa-heart"></i>
+              </button>
+            </div>
+            <div class="food-card-body">
+              <span class="badge bg-light text-muted border small mb-1 align-self-start">${item.subcategory_name || 'Chef Special'}</span>
+              <h5 class="food-title">${item.name}</h5>
+              <p class="food-desc">${item.description || 'Prepared fresh with high quality ingredients.'}</p>
+              <div class="food-card-footer">
+                <div class="food-price">₹${parseFloat(item.price).toFixed(2)}</div>
+                <button class="btn btn-primary-custom btn-sm rounded-pill" onclick="FoodApp.addToCart(${item.id}, 1, this)">
+                  <i class="fas fa-cart-plus me-1"></i> Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    empty.classList.remove('d-none');
+  }
+}
+
+async function removeWishlistItem(wishlistId) {
+  const res = await FoodApp.apiFetch(`/api/orders/wishlist/${wishlistId}/`, { method: 'DELETE' });
+  if (res.ok) {
+    FoodApp.showToast('Removed from wishlist', 'info');
+    const el = document.getElementById(`wishlist-card-${wishlistId}`);
+    if (el) el.remove();
+    const grid = document.getElementById('wishlist-items-grid');
+    if (grid && grid.children.length === 0) {
+      document.getElementById('wishlist-empty').classList.remove('d-none');
+    }
+  } else {
+    FoodApp.showToast(res.data.message || 'Failed to remove', 'error');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadWishlist);
+</script>
+{% endblock %}
